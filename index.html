@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>3D Video</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+
+    body {
+      background-color: #000000;
+      height: 100vh;
+      margin: 0px;
+    }
+
+  </style>
+
+</head>
+
+<body>
+  <script type="module">
+        import * as THREE from 'three';
+        import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+        // Setup the basic scene, camera, and renderer
+        let scene = new THREE.Scene();
+        let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        let renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true; // Enable VR
+        document.body.appendChild(renderer.domElement);
+
+        // Add VR button to enter VR mode
+        document.body.appendChild(VRButton.createButton(renderer));
+
+        // Load the 360 video as a texture
+        const textureLoader = new THREE.TextureLoader();
+        let texture = textureLoader.load('data/03397_782546.png')
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.NearestFilter;
+        texture.generateMipmaps = false;
+
+        let texture_depth = textureLoader.load('data/03397_782546_depth.png')
+        texture_depth.minFilter = THREE.NearestFilter;
+        texture_depth.generateMipmaps = false;
+
+        // Create a sphere geometry with the video texture
+        let geometry = new THREE.SphereGeometry(2, 240, 160);
+        geometry.scale(-1, 1, 1); // Invert the geometry to be viewed from inside
+
+        let material = new THREE.MeshStandardMaterial({
+            map: texture,
+            //side: THREE.BackSide,
+            displacementMap: texture_depth,
+            displacementScale: 100.0,
+            displacementBias: -0.0,
+        });
+        let sphere = new THREE.Mesh(geometry, material);
+        scene.add(sphere);
+
+
+        scene.background = new THREE.Color( 0x101010 );
+
+        const light = new THREE.AmbientLight( 0xffffff, 3 );
+        scene.add( light );
+
+        // Set the camera position TODO update here
+        camera.position.set(0, -5, -1.5);
+
+        // Animation loop
+        function animate() {
+            renderer.setAnimationLoop(render);
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+  </script>
+</body>
+
+</html>
