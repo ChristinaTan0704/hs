@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>3D Video</title>
+  <title>Pano Depth Vis Test</title>
   <script type="importmap">
     {
       "imports": {
@@ -15,86 +15,142 @@
     }
   </script>
   <style>
-
     body {
       background-color: #000000;
       height: 100vh;
       margin: 0px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: Arial, sans-serif;
     }
 
-  </style>
+    #menu {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
 
+    #menu select {
+      font-size: 16px;
+      padding: 10px;
+    }
+
+    #menu button {
+      font-size: 16px;
+      padding: 10px;
+      margin-left: 10px;
+    }
+  </style>
 </head>
 
+
 <body>
+  <div id="menu">
+    <label for="imageSelect">Choose an image: </label>
+    <select id="imageSelect">
+      <option value="apartment_1_rand_low_res.png">apartment_1_rand_low_res.png</option>
+      <option value="apartment_1_rand_high_res.png">apartment_1_rand_high_res.png</option>
+      <option value="office_4_rand_low_res.png">office_4_rand_low_res.png</option>
+      <option value="office_4_rand_high_res.png">office_4_rand_high_res.png</option>
+      <option value="room_0_rand_low_res.png">room_0_rand_low_res.png</option>
+      <option value="room_0_rand_high_res.png">room_0_rand_high_res.png</option>
+      <option value="office_3_rand_low_res.png">office_3_rand_low_res.png</option>
+      <option value="office_3_rand_high_res.png">office_3_rand_high_res.png</option>
+      <option value="office_2_rand_low_res.png">office_2_rand_low_res.png</option>
+      <option value="office_2_rand_high_res.png">office_2_rand_high_res.png</option>
+      <option value="hotel_0_rand_low_res.png">hotel_0_rand_low_res.png</option>
+      <option value="hotel_0_rand_high_res.png">hotel_0_rand_high_res.png</option>
+      <option value="apartment_0_rand_low_res.png">apartment_0_rand_low_res.png</option>
+      <option value="apartment_0_rand_high_res.png">apartment_0_rand_high_res.png</option>
+      <option value="room_1_rand_low_res.png">room_1_rand_low_res.png</option>
+      <option value="room_1_rand_high_res.png">room_1_rand_high_res.png</option>
+      <option value="frl_apartment_3_rand_low_res.png">frl_apartment_3_rand_low_res.png</option>
+      <option value="frl_apartment_3_rand_high_res.png">frl_apartment_3_rand_high_res.png</option>
+      <option value="03397_782546_2dgs_high_res.png">03397_782546_2dgs_high_res.png</option>
+      <option value="03397_782546_2dgs_low_res.png">03397_782546_2dgs_low_res.png</option>
+    </select>
+    <button id="enterVRButton">Refresh Scene</button>
+  </div>
+
   <script type="module">
-        import * as THREE from 'three';
-        import { VRButton } from 'three/addons/webxr/VRButton.js';
+    import * as THREE from 'three';
+    import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-        // Setup the basic scene, camera, and renderer
-        let scene = new THREE.Scene();
-        let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        let renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true; // Enable VR
-        document.body.appendChild(renderer.domElement);
+    // Setup the basic scene, camera, and renderer
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    let renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true; // Enable VR
+    document.body.appendChild(renderer.domElement);
 
-        // Add VR button to enter VR mode
-        document.body.appendChild(VRButton.createButton(renderer));
+    // Add VR button to Choose mode
+    document.body.appendChild(VRButton.createButton(renderer));
 
-        // Load the 360 video as a texture
-        const textureLoader = new THREE.TextureLoader();
-        let texture = textureLoader.load('data/03397_782546.png')
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.minFilter = THREE.NearestFilter;
-        texture.generateMipmaps = false;
+    let sphere, material;
 
-        let texture_depth = textureLoader.load('data/03397_782546_depth.png')
-        texture_depth.minFilter = THREE.NearestFilter;
-        texture_depth.generateMipmaps = false;
+    function loadImageAndEnterVR() {
+      const selectedImage = document.getElementById('imageSelect').value;
+      const textureLoader = new THREE.TextureLoader();
+      
+      let texture = textureLoader.load(`data/${selectedImage}`);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
 
-        // Create a sphere geometry with the video texture
-        let geometry = new THREE.SphereGeometry(2, 240, 160);
-        geometry.scale(-1, 1, 1); // Invert the geometry to be viewed from inside
+      let texture_depth = textureLoader.load(`data/${selectedImage.replace('.png', '_depth.png')}`);
+      texture_depth.minFilter = THREE.NearestFilter;
+      texture_depth.generateMipmaps = false;
 
-        let material = new THREE.MeshStandardMaterial({
-            map: texture,
-            //side: THREE.BackSide,
-            displacementMap: texture_depth,
-            displacementScale: 100.0,
-            displacementBias: -0.0,
-        });
-        let sphere = new THREE.Mesh(geometry, material);
-        scene.add(sphere);
+      if (sphere) {
+        scene.remove(sphere);
+      }
 
+      // Create a sphere geometry with the selected texture
+      let geometry = new THREE.SphereGeometry(2, 240, 160);
+      geometry.scale(-1, 1, 1); // Invert the geometry to be viewed from inside
 
-        scene.background = new THREE.Color( 0x101010 );
+      material = new THREE.MeshStandardMaterial({
+        map: texture,
+        displacementMap: texture_depth,
+        displacementScale: 100.0,
+        displacementBias: -0.0,
+      });
 
-        const light = new THREE.AmbientLight( 0xffffff, 3 );
-        scene.add( light );
+      sphere = new THREE.Mesh(geometry, material);
+      scene.add(sphere);
+    }
 
-        // Set the camera position TODO update here
-        camera.position.set(0, -5, -1.5);
+    // Event listener for the Choose button
+    document.getElementById('enterVRButton').addEventListener('click', () => {
+      loadImageAndEnterVR();
+      renderer.setAnimationLoop(render);
+    });
 
-        // Animation loop
-        function animate() {
-            renderer.setAnimationLoop(render);
-        }
+    // Set the scene background and lighting
+    scene.background = new THREE.Color(0x101010);
 
-        function render() {
-            renderer.render(scene, camera);
-        }
+    const light = new THREE.AmbientLight(0xffffff, 3);
+    scene.add(light);
 
-        animate();
+    // Set the camera position
+    camera.position.set(0, 0, 0);
 
-        // Handle window resize
-        window.addEventListener('resize', onWindowResize, false);
+    // Render loop
+    function render() {
+      renderer.render(scene, camera);
+    }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+    // Handle window resize
+    window.addEventListener('resize', onWindowResize, false);
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
   </script>
 </body>
 
